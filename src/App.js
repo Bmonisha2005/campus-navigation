@@ -17,10 +17,10 @@ function App() {
       number: 0,
       useCustomLayout: true,
       rooms: [
-        { id: 1, name: "Transport Office", type: "office", gridPosition: { column: 1, row: 5 } },
-        { id: 2, name: "Administrative Office", type: "office", gridPosition: { column: 1, row: 4 } },
-        { id: 3, name: "Administrative Office", type: "office", gridPosition: { column: 1, row: 3 } },
-        { id: 4, name: "Finance & General Account", type: "office", gridPosition: { column: 1, row: 2 } },
+        { id: 1, name: "Transport Office", type: "office", gridPosition: { column: 2, row: 5 } },
+        { id: 2, name: "Administrative Office", type: "office", gridPosition: { column: 2, row: 4 } },
+        { id: 3, name: "Administrative Office", type: "office", gridPosition: { column: 2, row: 3 } },
+        { id: 4, name: "Finance & General Account", type: "office", gridPosition: { column: 2, row: 2 } },
         { id: 5, name: "Auditor Office", type: "office", gridPosition: { column: 2, row: 1 } },
         { id: 6, name: "Xerox", type: "facility", gridPosition: { column: 3, row: 1 } },
         { id: 7, name: "Record Section", type: "office", gridPosition: { column: 4, row: 1 } },
@@ -31,10 +31,10 @@ function App() {
         { id: 10, name: "BSNL Office", type: "office", gridPosition: { column: 9, row: 1 } },
         { id: 11, name: "Software Cell", type: "lab", gridPosition: { column: 10, row: 1 } },
         { id: 12, name: "Office", type: "office", gridPosition: { column: 11, row: 1 } },
-        { id: 13, name: "Office", type: "office", gridPosition: { column: 12, row: 2 } },
-        { id: 14, name: "Office", type: "office", gridPosition: { column: 12, row: 3 } },
-        { id: 15, name: "Photo Studio", type: "facility", gridPosition: { column: 12, row: 4 } },
-        { id: 16, name: "Office", type: "office", gridPosition: { column: 12, row: 5 } }
+        { id: 13, name: "Office", type: "office", gridPosition: { column: 11, row: 2 } },
+        { id: 14, name: "Office", type: "office", gridPosition: { column: 11, row: 3 } },
+        { id: 15, name: "Photo Studio", type: "facility", gridPosition: { column: 11, row: 4 } },
+        { id: 16, name: "Office", type: "office", gridPosition: { column: 11, row: 5 } }
       ]
     },
     {
@@ -42,8 +42,8 @@ function App() {
       number: 1,
       useCustomLayout: true,
       rooms: [
-        { id: 17, name: "Library", type: "facility", gridPosition: { column: 1, row: 3 } },
-        { id: 18, name: "Dean Academic", type: "office", gridPosition: { column: 1, row: 2 } },
+        { id: 17, name: "Library", type: "facility", gridPosition: { column: 2, rows: 5 } },
+        { id: 18, name: "Dean Academic", type: "office", gridPosition: { column: 2, row: 2 } },
         { id: 19, name: "Seminar Hall", type: "hall", gridPosition: { column: 2, row: 1, columnSpan: 5 } },
         { id: "19.1", name: "Steps", type: "facility", gridPosition: { column: 7, row: 1 } },
         { id: "19.2", name: "Lift", type: "facility", gridPosition: { column: 8, row: 1 } },
@@ -207,19 +207,19 @@ function App() {
     let corridorRow = 2;
     
     if (floor.number === 0) {
-      gridColumns = 13;
-      gridRows = 4;
-      corridorColumn = '2 / 13';
+      gridColumns = 12;
+      gridRows = 5;
+      corridorColumn = '3 / 11';
       corridorRow = 2;
     } else if (floor.number === 1) {
       gridColumns = 12;
       gridRows = 5;
-      corridorColumn = '2 / 12';
+      corridorColumn = '3 / 12';
       corridorRow = 2;
     } else if (floor.number === 2) {
       gridColumns = 12;
       gridRows = 5;
-      corridorColumn = '2 / 11';
+      corridorColumn = '2 / 13';
       corridorRow = 2;
     } else if (floor.number === 3) {
       gridColumns = 12;
@@ -312,10 +312,14 @@ function App() {
       <div style={{ maxWidth: '72rem', margin: '0 auto' }}>
         
         <div style={{ background: 'white', borderRadius: '0.5rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', padding: '1.5rem', marginBottom: '1rem' }}>
-          <h1 style={{ fontSize: '1.875rem', fontWeight: '700', color: '#312e81', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <MapPin style={{ color: '#4f46e5' }} />
-            Campus Indoor Navigation
-          </h1>
+<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+  <h1 style={{ fontSize: '1.875rem', fontWeight: '700', color: '#312e81', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+    <MapPin style={{ color: '#4f46e5' }} />
+    Campus Indoor Navigation
+  </h1>
+  <h2 style={{ fontSize: '1.875rem', color: '#312e81', fontWeight: '600' }}>Jhansi Rani Block</h2>
+</div>
+
           <p style={{ color: '#4b5563' }}>Find rooms instantly - Get directions</p>
         </div>
 
@@ -324,7 +328,7 @@ function App() {
             <Search style={{ position: 'absolute', left: '12px', top: '12px', color: '#9ca3af' }} size={20} />
             <input
               type="text"
-              placeholder="Search: CS-A, BCA, Library, Lab..."
+              placeholder="      Search: CS-A, BCA, Library, Lab,Ds,It..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ width: '100%', paddingLeft: '40px', padding: '12px 16px', border: '2px solid #d1d5db', borderRadius: '8px', fontSize: '16px' }}
