@@ -1,9 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Navigation, MapPin, Layers, ArrowRight, X, ChevronUp, ChevronDown } from 'lucide-react';
-import './App.css';
 
 function App() {
-  const     [currentFloor, setCurrentFloor] = useState(0);
+  // Add CSS for blinking animation
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes blink-blue {
+        0%, 100% {
+          box-shadow: 0 0 20px rgba(37, 99, 235, 0.8);
+          border-color: #2563eb;
+        }
+        50% {
+          box-shadow: 0 0 40px rgba(37, 99, 235, 1), 0 0 60px rgba(59, 130, 246, 0.6);
+          border-color: #3b82f6;
+        }
+      }
+      .destination-blink {
+        animation: blink-blue 1.5s ease-in-out infinite;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
+
+  const [currentFloor, setCurrentFloor] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [fromRoom, setFromRoom] = useState(null);
@@ -12,7 +33,7 @@ function App() {
   const [filteredRooms, setFilteredRooms] = useState([]);
 
   const floors = [
-{
+    {
       name: "Ground Floor",
       number: 0,
       useCustomLayout: true,
@@ -161,27 +182,104 @@ function App() {
     return colors[type] || '#9ca3af';
   };
 
+  const getDirection = (fromCol, toCol, fromRow, toRow) => {
+    const colDiff = toCol - fromCol;
+    const rowDiff = toRow - fromRow;
+    
+    // Same row - horizontal movement
+    if (rowDiff === 0) {
+      if (colDiff > 3) return 'far to the right';
+      if (colDiff > 0) return 'to your right';
+      if (colDiff < -3) return 'far to the left';
+      if (colDiff < 0) return 'to your left';
+    }
+    
+    // Same column - vertical movement
+    if (colDiff === 0) {
+      if (rowDiff > 2) return 'at the far end of the corridor';
+      if (rowDiff !== 0) return 'along the corridor';
+    }
+    
+    // Diagonal movement
+    if (Math.abs(colDiff) > Math.abs(rowDiff)) {
+      if (colDiff > 3) return 'far to the right';
+      if (colDiff > 0) return 'towards the right side';
+      if (colDiff < -3) return 'far to the left';
+      return 'towards the left side';
+    } else {
+      if (rowDiff > 0) return 'ahead along the corridor';
+      return 'back along the corridor';
+    }
+    
+    return 'along the corridor';
+  };
+
   const generateDirections = (from, to) => {
     const directions = [];
+    const fromPos = from.gridPosition;
+    const toPos = to.gridPosition;
     
     if (from.floor === to.floor) {
       directions.push(`You are on ${from.floorName}`);
       directions.push(`Starting from: ${from.name} (Room ${from.id})`);
-      directions.push(`Walk along the corridor to Room ${to.id}`);
-      directions.push(`Destination: ${to.name} (Room ${to.id})`);
+      
+      // Add directional instruction based on position
+      const direction = getDirection(fromPos.column, toPos.column, fromPos.row, toPos.row);
+      directions.push(`Head ${direction}`);
+      
+      const colDiff = Math.abs(toPos.column - fromPos.column);
+      const rowDiff = Math.abs(toPos.row - fromPos.row);
+      const distance = Math.max(colDiff, rowDiff);
+      
+      if (distance > 5) {
+        directions.push(`Walk approximately ${distance * 3}-${distance * 4} meters along the corridor`);
+      } else if (distance > 2) {
+        directions.push(`Walk a short distance along the corridor`);
+      } else {
+        directions.push(`The room is nearby`);
+      }
+      
+      directions.push(`You will find ${to.name} (Room ${to.id}) on your way`);
+      directions.push(`Destination reached: ${to.name}`);
     } else {
       directions.push(`Starting from: ${from.name} (Room ${from.id}) on ${from.floorName}`);
-      directions.push(`Go to the nearest stairs or lift`);
+      
+      // Direction to stairs/lift
+      const stairsCol = 7; // Approximate position of stairs
+      if (fromPos.column < stairsCol - 2) {
+        directions.push(`Head right towards the stairs or lift`);
+      } else if (fromPos.column > stairsCol + 2) {
+        directions.push(`Head left towards the stairs or lift`);
+      } else {
+        directions.push(`Go straight to the stairs or lift`);
+      }
       
       if (from.floor < to.floor) {
-        directions.push(`Take ${to.floor - from.floor} floor(s) UP to ${to.floorName}`);
+        const floors = to.floor - from.floor;
+        directions.push(`Take the stairs/lift ${floors} floor${floors > 1 ? 's' : ''} UP to ${to.floorName}`);
       } else {
-        directions.push(`Take ${from.floor - to.floor} floor(s) DOWN to ${to.floorName}`);
+        const floors = from.floor - to.floor;
+        directions.push(`Take the stairs/lift ${floors} floor${floors > 1 ? 's' : ''} DOWN to ${to.floorName}`);
       }
       
       directions.push(`Exit on ${to.floorName}`);
-      directions.push(`Walk to Room ${to.id}`);
-      directions.push(`Destination: ${to.name} (Room ${to.id})`);
+      
+      // Direction after exiting stairs
+      if (toPos.column < stairsCol - 2) {
+        directions.push(`Turn right after exiting`);
+      } else if (toPos.column > stairsCol + 2) {
+        directions.push(`Turn left after exiting`);
+      } else {
+        directions.push(`Continue straight ahead`);
+      }
+      
+      const distance = Math.abs(toPos.column - stairsCol);
+      if (distance > 3) {
+        directions.push(`Walk approximately ${distance * 3}-${distance * 4} meters`);
+      }
+      
+      directions.push(`Look for ${to.name} (Room ${to.id})`);
+      directions.push(`Destination reached: ${to.name}`);
     }
     
     return directions;
@@ -190,6 +288,7 @@ function App() {
   const handleNavigate = () => {
     if (fromRoom && toRoom) {
       setShowDirections(true);
+      setCurrentFloor(toRoom.floor);
     }
   };
 
@@ -242,18 +341,20 @@ function App() {
         {floor.rooms.map((room) => {
           const pos = room.gridPosition;
           const isStairOrLift = room.name.includes('Stair') || room.name.includes('Lift') || room.name.includes('Steps');
+          const isDestination = toRoom && room.id === toRoom.id && floor.number === toRoom.floor;
           
           return (
             <div
               key={room.id}
               onClick={() => setSelectedRoom({...room, floor: floor.number, floorName: floor.name})}
+              className={isDestination ? 'destination-blink' : ''}
               style={{
                 gridColumn: pos.columnSpan ? `${pos.column} / span ${pos.columnSpan}` : pos.column,
                 gridRow: pos.row,
                 background: isStairOrLift
                   ? 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)'
                   : getRoomColor(room.type),
-                border: '3px solid #333',
+                border: isDestination ? '4px solid #2563eb' : '3px solid #333',
                 borderRadius: '8px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -264,18 +365,18 @@ function App() {
                 color: 'white',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                boxShadow: isDestination ? '0 0 20px rgba(37, 99, 235, 0.8)' : '0 2px 4px rgba(0,0,0,0.1)',
                 padding: '5px',
                 overflow: 'hidden'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'scale(1.05)';
-                e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.2)';
+                e.currentTarget.style.boxShadow = isDestination ? '0 0 30px rgba(37, 99, 235, 1)' : '0 10px 25px rgba(0,0,0,0.2)';
                 e.currentTarget.style.zIndex = '10';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                e.currentTarget.style.boxShadow = isDestination ? '0 0 20px rgba(37, 99, 235, 0.8)' : '0 2px 4px rgba(0,0,0,0.1)';
                 e.currentTarget.style.zIndex = '1';
               }}
             >
@@ -312,14 +413,13 @@ function App() {
       <div style={{ maxWidth: '72rem', margin: '0 auto' }}>
         
         <div style={{ background: 'white', borderRadius: '0.5rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', padding: '1.5rem', marginBottom: '1rem' }}>
-<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-  <h1 style={{ fontSize: '1.875rem', fontWeight: '700', color: '#312e81', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-    <MapPin style={{ color: '#4f46e5' }} />
-    Campus Indoor Navigation
-  </h1>
-  <h2 style={{ fontSize: '1.875rem', color: '#312e81', fontWeight: '600' }}>Jhansi Rani Block</h2>
-</div>
-
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h1 style={{ fontSize: '1.875rem', fontWeight: '700', color: '#312e81', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <MapPin style={{ color: '#4f46e5' }} />
+              Campus Indoor Navigation
+            </h1>
+            <h2 style={{ fontSize: '1.875rem', color: '#312e81', fontWeight: '600' }}>Jhansi Rani Block</h2>
+          </div>
           <p style={{ color: '#4b5563' }}>Find rooms instantly - Get directions</p>
         </div>
 
@@ -424,7 +524,7 @@ function App() {
 
         <div style={{ background: 'white', borderRadius: '0.5rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', padding: '1rem', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <h3 style={{ fontWeight: '700', fontSize: '1.125rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                       <h3 style={{ fontWeight: '700', fontSize: '1.125rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Layers size={20} style={{ color: '#4f46e5' }} />
               {floors[currentFloor].name}
             </h3>
@@ -483,3 +583,4 @@ function App() {
 }
 
 export default App;
+
